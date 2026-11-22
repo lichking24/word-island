@@ -201,6 +201,30 @@ main{position:relative;z-index:2;max-width:1060px;margin:0 auto;padding:calc(var
 .mode-card.m-listen .mi{background:linear-gradient(135deg,#c9e8ff,#8fd0ff)}
 .mode-card.m-spell .mi{background:linear-gradient(135deg,#d6f5d9,#a4e6b0)}
 .mode-card.m-mix .mi{background:linear-gradient(135deg,#ffd6e6,#ff9fc6)}
+.mode-card.m-write .mi{background:linear-gradient(135deg,#e4d6ff,#c3a6ff)}
+/* ---------- write / sentence mode ---------- */
+.write-prompt{font-family:var(--font-fun);font-size:20px;color:var(--ink);margin:6px 0 2px}
+.write-word{display:inline-flex;align-items:center;gap:8px;background:#fff;border:2px solid rgba(31,163,154,.3);border-radius:999px;padding:8px 18px;font-weight:800;font-size:19px;color:var(--teal-deep);margin:10px 0}
+.write-area{width:100%;min-height:96px;border:2.5px solid rgba(31,163,154,.35);border-radius:16px;background:#fff;padding:14px 16px;font-family:var(--font-body);font-size:18px;font-weight:600;color:var(--ink);resize:vertical;outline:none;transition:.15s}
+.write-area:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(31,163,154,.2)}
+.write-tools{display:flex;gap:10px;justify-content:center;align-items:center;margin-top:14px;flex-wrap:wrap}
+.write-hintline{font-size:13px;color:var(--ink-soft);font-weight:700;margin-top:10px;min-height:18px}
+.write-feedback{margin-top:18px;text-align:left;background:#fff;border-radius:18px;border:2px solid rgba(31,163,154,.2);padding:18px 20px;animation:screenIn .4s cubic-bezier(.22,1,.36,1)}
+.write-feedback .wf-stars{font-size:30px;letter-spacing:5px;text-align:center}
+.write-feedback .wf-praise{font-family:var(--font-fun);font-size:19px;color:var(--palm-deep);text-align:center;margin:6px 0}
+.write-feedback .wf-row{font-size:14.5px;font-weight:600;color:var(--ink);margin:8px 0;line-height:1.6}
+.write-feedback .wf-row b{color:var(--teal-deep)}
+.write-feedback .wf-corr{background:var(--mint);border-radius:12px;padding:10px 14px;font-weight:700;color:var(--palm-deep)}
+.write-feedback .wf-tip{background:#fff6e0;border-radius:12px;padding:10px 14px;color:#8a6100}
+.write-feedback .wf-mine{color:var(--ink-soft)}
+.write-loading{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;color:var(--teal-deep);padding:20px 0}
+.write-loading .spin{display:inline-block;animation:spin 1s linear infinite;font-size:24px}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* ---------- AI key modal ---------- */
+.key-input{width:100%;border:2.5px solid rgba(31,163,154,.35);border-radius:14px;padding:12px 14px;font-family:ui-monospace,Menlo,monospace;font-size:14px;color:var(--ink);background:#fff;outline:none;margin:6px 0 12px}
+.key-input:focus{border-color:var(--teal)}
+.key-actions{display:flex;gap:10px;flex-wrap:wrap}
+.key-note{font-size:12.5px;font-weight:700;color:var(--ink-soft);margin-top:12px}
 .mode-card b{font-size:16.5px;display:block}
 .mode-card span{font-size:12.5px;color:var(--ink-soft);font-weight:700}
 .mode-card .go{margin-left:auto;font-size:20px;color:var(--teal)}
@@ -363,6 +387,7 @@ main{position:relative;z-index:2;max-width:1060px;margin:0 auto;padding:calc(var
   <div class="spacer"></div>
   <div class="stat-pill" id="shellPill" title="收集的贝壳">🐚 <span id="shellCount">0</span></div>
   <div class="stat-pill" id="comboPill" title="连续答对">🔥 <span id="comboCount">0</span></div>
+  <button class="icon-btn" id="aiKeyBtn" onclick="openAI()" title="AI 造句老师钥匙（家长设置）">🔑</button>
   <button class="icon-btn" id="soundBtn" onclick="toggleSound()" title="声音开关">🔊</button>
   <button class="profile-btn" id="profileBtn" onclick="openProfiles()">
     <span class="avatar" id="pbAvatar">🚀</span><span class="pname" id="pbName">大宝 · 四年级</span>
@@ -471,6 +496,9 @@ main{position:relative;z-index:2;max-width:1060px;margin:0 auto;padding:calc(var
       <button class="mode-card m-mix" onclick="startSession('mix')">
         <span class="mi">🏴‍☠️</span><span><b>混合大冒险</b><span>三种玩法轮流上，宝藏加倍！</span></span><span class="go">→</span>
       </button>
+      <button class="mode-card m-write" onclick="startSession('write')">
+        <span class="mi">✍️</span><span><b>造句小作家</b><span>用单词写一句话，AI 老师点评打分</span></span><span class="go">→</span>
+      </button>
     </div>
   </div>
 </div>
@@ -482,6 +510,21 @@ main{position:relative;z-index:2;max-width:1060px;margin:0 auto;padding:calc(var
     <h3>👋 谁来冒险？</h3>
     <p class="msub">两位小船长各有自己的航线、贝壳和宝箱进度</p>
     <div class="profile-grid" id="profileGrid"></div>
+  </div>
+</div>
+
+<!-- AI key settings modal -->
+<div class="overlay" id="aiOverlay" onclick="if(event.target===this)closeAI()">
+  <div class="card modal">
+    <button class="modal-close" onclick="closeAI()">✕</button>
+    <h3>🔑 AI 造句老师</h3>
+    <p class="msub">「造句小作家」由百炼大模型点评。钥匙只保存在<b>本机浏览器</b>，不会上传到网站代码里；其他玩法无需钥匙。</p>
+    <input type="password" id="aiKeyInput" class="key-input" placeholder="粘贴百炼 API Key（sk-…）" autocomplete="off">
+    <div class="key-actions">
+      <button class="btn btn-primary" style="font-size:15px;padding:10px 22px" onclick="saveAIKey()">保存钥匙</button>
+      <button class="btn btn-ghost" style="font-size:15px;padding:10px 22px" onclick="clearAIKey()">清除</button>
+    </div>
+    <p class="key-note" id="aiKeyState"></p>
   </div>
 </div>
 
@@ -818,6 +861,7 @@ for(const k of ['hang','ping']){
   if(p.sem!==0&&p.sem!==1)p.sem=0;
 }
 if(!KIDS[store.current])store.current='hang';
+if(typeof store.llmKey!=='string')store.llmKey='';
 function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(store));}catch(e){}}
 const P=()=>store.profiles[store.current];
 const BOOK=()=>GRADES[P().grade];
@@ -1089,7 +1133,7 @@ function startSession(mode,onlyWords){
   if(!pool.length)pool=u.words.slice();
   // prioritize least-mastered words, then shuffle within tiers
   pool=shuffle(pool).sort((a,b)=>mastery(a)-mastery(b));
-  const words=pool.slice(0,Math.min(8,pool.length));
+  const words=pool.slice(0,Math.min(mode==='write'?5:8,pool.length));
   const modes=['pic','listen','spell'];
   session={semIdx,uIdx,grade,unit:u,mode,words,idx:0,combo:0,earned:0,correct:0,firstTry:0,
     missed:[],loot:[],lock:false,
@@ -1118,8 +1162,9 @@ function renderRound(){
   $('vboat').style.left=(4+(s.idx/(s.rounds.length))*90)+'%';
   updateCombo();
   const card=$('qcard');
-  const kindLabel={pic:'🍎 看图找单词',listen:'🔊 听音辨单词',spell:'🧩 动手拼单词'}[r.mode];
+  const kindLabel={pic:'🍎 看图找单词',listen:'🔊 听音辨单词',spell:'🧩 动手拼单词',write:'✍️ 造句小作家'}[r.mode];
   if(r.mode==='spell'){renderSpell(card,r,kindLabel);}
+  else if(r.mode==='write'){renderWrite(card,r,kindLabel);}
   else{renderChoice(card,r,kindLabel);}
 }
 function distractors(word,count){
@@ -1315,6 +1360,92 @@ function finishSession(){
   if(stars===3)setTimeout(()=>burst(innerWidth*.5,innerHeight*.22,70),1100);
 }
 
+/* ================= AI KEY (parent-set, device-local) ================= */
+function openAI(){ $('aiKeyInput').value=store.llmKey||''; refreshAIState(); $('aiOverlay').classList.add('open'); }
+function closeAI(){ $('aiOverlay').classList.remove('open'); }
+function refreshAIState(){ $('aiKeyState').textContent=store.llmKey?'✅ 已配置钥匙（仅存本机浏览器）。造句小作家可用。':'⚠️ 未配置钥匙。造句小作家需要家长粘贴百炼 API Key；其他玩法不受影响。'; }
+function saveAIKey(){ const v=$('aiKeyInput').value.trim(); if(!v){toast('请先粘贴钥匙');return;} store.llmKey=v; save(); refreshAIState(); FX.play('pop'); toast('🔑 钥匙已保存到本机'); }
+function clearAIKey(){ store.llmKey=''; save(); $('aiKeyInput').value=''; refreshAIState(); toast('已清除钥匙'); }
+
+/* ================= WRITE / LLM GRADING ================= */
+const WRITE_SYS='You are a warm, encouraging primary-school English teacher in China. A child writes ONE English sentence using a target word. Grade it kindly. Return ONLY strict JSON, no markdown: {"score":integer 0-100,"stars":integer 1-3,"used_word":boolean,"praise":"short encouraging Chinese praise","correction":"a corrected natural English sentence, or null if already good","tip":"one short Chinese teaching tip, or empty string"}. Rules: praise effort first; be gentle; correction keeps the child\'s idea and uses the target word correctly; if the sentence does not use the target word set used_word=false and score<=40 and explain in tip; keep language simple for kids.';
+async function gradeSentence(word,sentence){
+  if(!store.llmKey){const e=new Error('nokey');e.code='nokey';throw e;}
+  const resp=await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+store.llmKey,'Content-Type':'application/json'},
+    body:JSON.stringify({model:'qwen-plus',temperature:0.3,response_format:{type:'json_object'},
+      messages:[{role:'system',content:WRITE_SYS},
+                {role:'user',content:JSON.stringify({target_word:word[0],meaning:word[1],sentence:sentence})}]})
+  });
+  if(resp.status===401||resp.status===403){const e=new Error('badkey');e.code='badkey';throw e;}
+  if(!resp.ok){const e=new Error('http'+resp.status);e.code='http';throw e;}
+  const d=await resp.json();
+  let txt=((d.choices||[])[0]||{}).message?d.choices[0].message.content:'';
+  txt=(txt||'').trim();
+  const m=txt.match(/\{[\s\S]*\}/); if(m)txt=m[0];
+  return JSON.parse(txt);
+}
+function renderWrite(card,r,kindLabel){
+  const w=r.word;
+  card.innerHTML=`<span class="qkind">${kindLabel}</span><br>
+    <span class="q-emoji" style="font-size:clamp(56px,9vw,80px)">${w[2]}</span>
+    <div class="write-word">${esc(w[0])} <span style="color:var(--ink-soft);font-size:14px">${w[1]}</span>
+      <button class="speak-mini" id="miniSpeak" title="听发音">🔊</button></div>
+    <div class="write-prompt">用这个词写一句英文句子吧！</div>
+    <textarea class="write-area" id="writeArea" placeholder="例如：I like … / This is … / She has …" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+    <div class="write-tools">
+      <button class="btn btn-ghost" style="font-size:15px;padding:10px 18px" id="writeHint">💡 给点提示</button>
+      <button class="btn btn-primary" style="font-size:16px;padding:11px 26px" id="writeSubmit">✍️ 交给 AI 老师</button>
+    </div>
+    <div class="write-hintline" id="writeHintLine"></div>
+    <div id="writeResult"></div>`;
+  $('miniSpeak').onclick=()=>speak(w[0],$('miniSpeak'));
+  setTimeout(()=>{if(session&&session.rounds[session.idx]===r)speak(w[0],$('miniSpeak'));},420);
+  $('writeHint').onclick=()=>{$('writeHintLine').textContent='💡 可以这样开头：I … / This is … / She has … / We … 记得用上「'+w[0]+'」，句首大写、句尾加标点。';};
+  $('writeSubmit').onclick=()=>submitWrite(w);
+  $('writeArea').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();submitWrite(w);}});
+  setTimeout(()=>{const a=$('writeArea');if(a)a.focus();},80);
+}
+async function submitWrite(w){
+  const s=session;if(!s||s.lock)return;
+  const area=$('writeArea');const sentence=(area.value||'').trim();
+  if(!sentence){toast('先写一句英文句子哦');area.focus();return;}
+  if(!store.llmKey){openAI();toast('🔑 造句需要家长先配置钥匙');return;}
+  s.lock=true;
+  $('writeSubmit').disabled=true;$('writeHint').disabled=true;area.disabled=true;
+  $('writeResult').innerHTML='<div class="write-loading"><span class="spin">🌀</span> AI 老师正在读你的句子…</div>';
+  let g;
+  try{ g=await gradeSentence(w,sentence); }
+  catch(e){
+    s.lock=false;$('writeSubmit').disabled=false;$('writeHint').disabled=false;area.disabled=false;
+    if(e.code==='nokey'||e.code==='badkey'){openAI();$('writeResult').innerHTML='<div class="write-hintline">🔑 钥匙无效或缺失，请家长检查后重试。</div>';}
+    else{$('writeResult').innerHTML='<div class="write-hintline">🌊 网络开小差了，再点一次「交给 AI 老师」。</div>';}
+    return;
+  }
+  const stars=Math.max(1,Math.min(3,g.stars||1));
+  const ok=(g.used_word!==false)&&(g.score||0)>=60;
+  const coins=ok?(stars===3?15:10):5;
+  s.earned+=coins;P().coins+=coins; // participation reward always awarded
+  if(ok){s.correct++;s.combo++;s.best=Math.max(s.best||0,s.combo);P().words[w[0]]=Math.min(3,mastery(w)+1);s.loot.push(w);
+    FX.play('correct');setTimeout(()=>FX.play('coin'),260);
+    const rect=$('qcard').getBoundingClientRect();burst(rect.left+rect.width/2,rect.top+rect.height*.3,26);}
+  else{s.combo=0;P().words[w[0]]=Math.max(0,mastery(w)-1);if(!s.missed.some(x=>x[0]===w[0]))s.missed.push(w);FX.play('wrong');}
+  save();refreshHeader();updateCombo();
+  const corr=(g.correction&&g.correction!=='null')?g.correction:null;
+  $('writeResult').innerHTML=`<div class="write-feedback">
+    <div class="wf-stars">${'⭐'.repeat(stars)}${'☆'.repeat(3-stars)}</div>
+    <div class="wf-praise">${esc(g.praise||'写得不错！')}</div>
+    <div class="wf-row wf-mine">你的句子：<b>${esc(sentence)}</b></div>
+    ${corr?`<div class="wf-row">更地道的写法：<span class="wf-corr">${esc(corr)}</span> <button class="speak-mini" id="corrSpeak">🔊</button></div>`:''}
+    ${g.tip?`<div class="wf-row wf-tip">💡 ${esc(g.tip)}</div>`:''}
+    <div class="wf-row" style="text-align:center;color:var(--teal-deep);font-weight:800">+${coins} 🐚</div>
+    <div style="text-align:center;margin-top:10px"><button class="btn btn-primary" style="font-size:16px;padding:11px 26px" id="writeNext">${s.idx+1>=s.rounds.length?'🏁 查看成果':'⛵ 下一题'}</button></div>
+  </div>`;
+  if(corr)$('corrSpeak').onclick=()=>speak(corr,$('corrSpeak'));
+  $('writeNext').onclick=()=>{if(!session)return;session.idx++;if(session.idx>=session.rounds.length)finishSession();else renderRound();};
+}
+
 /* ================= CHEST ================= */
 function setChestSem(i){chestSem=i;FX.play('click');renderChest();}
 function renderChest(){
@@ -1347,6 +1478,7 @@ function renderChest(){
 addEventListener('keydown',e=>{
   if(currentScreen!=='game'||!session||session.lock)return;
   const r=session.rounds[session.idx];
+  if(r.mode==='write')return; // textarea handles its own keys (Ctrl+Enter submits)
   if(r.mode!=='spell'){
     const n=parseInt(e.key,10);
     if(n>=1&&n<=4){const btn=document.querySelectorAll('.opt')[n-1];if(btn&&!btn.disabled)btn.click();}
