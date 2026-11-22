@@ -56,7 +56,9 @@ def throttle():
         _last[0] = time.time()
 
 def synth(en):
-    body = {"model": MODEL, "input": {"text": en, "voice": VOICE, "language_type": "English"}}
+    # Read the word twice ("egg. egg."). A single bare short word makes qwen3-tts
+    # hallucinate non-English rambling; the repetition anchors English output.
+    body = {"model": MODEL, "input": {"text": f"{en}. {en}.", "voice": VOICE, "language_type": "English"}}
     for attempt in range(4):
         throttle()
         req = urllib.request.Request(ENDPOINT, data=json.dumps(body).encode(),
