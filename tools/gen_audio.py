@@ -39,9 +39,11 @@ def words():
 KEY = load_key()
 VOICE = "Jennifer"
 WORKERS = 4
+FORCE = False
 for i, a in enumerate(sys.argv):
     if a == "--voice": VOICE = sys.argv[i + 1]
     if a == "--workers": WORKERS = int(sys.argv[i + 1])
+    if a == "--force": FORCE = True
 
 _gate = threading.Lock()
 _last = [0.0]
@@ -83,7 +85,7 @@ def synth(en):
 def main():
     os.makedirs(AUDIO, exist_ok=True)
     ws = words()
-    todo = [w for w in ws if not os.path.isfile(os.path.join(AUDIO, slug(w) + ".mp3"))]
+    todo = ws if FORCE else [w for w in ws if not os.path.isfile(os.path.join(AUDIO, slug(w) + ".mp3"))]
     print(f"total unique words={len(ws)} already={len(ws)-len(todo)} to_generate={len(todo)} voice={VOICE}", flush=True)
     done = 0; failed = []; total_bytes = 0; t0 = time.time()
     with ThreadPoolExecutor(max_workers=WORKERS) as ex:

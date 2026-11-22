@@ -3,3 +3,5 @@ bailian.env
 __pycache__/
 node_modules/
 .DS_Store
+voice-samples/
+voice-chooser.html
