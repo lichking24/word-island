@@ -40,10 +40,12 @@ KEY = load_key()
 VOICE = "Jennifer"
 WORKERS = 4
 FORCE = False
+REPEAT = 2
 for i, a in enumerate(sys.argv):
     if a == "--voice": VOICE = sys.argv[i + 1]
     if a == "--workers": WORKERS = int(sys.argv[i + 1])
     if a == "--force": FORCE = True
+    if a == "--repeat": REPEAT = int(sys.argv[i + 1])
 
 _gate = threading.Lock()
 _last = [0.0]
@@ -56,9 +58,11 @@ def throttle():
         _last[0] = time.time()
 
 def synth(en):
-    # Read the word twice ("egg. egg."). A single bare short word makes qwen3-tts
-    # hallucinate non-English rambling; the repetition anchors English output.
-    body = {"model": MODEL, "input": {"text": f"{en}. {en}.", "voice": VOICE, "language_type": "English"}}
+    # Repetition anchors English for hallucination-prone voices (Neil needs 2).
+    # Some voices (Serena) are clean single-word and repeat makes them drift, so
+    # repeat is configurable per voice via --repeat.
+    text = ". ".join([en] * REPEAT) + "."
+    body = {"model": MODEL, "input": {"text": text, "voice": VOICE, "language_type": "English"}}
     for attempt in range(4):
         throttle()
         req = urllib.request.Request(ENDPOINT, data=json.dumps(body).encode(),
