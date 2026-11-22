@@ -1145,6 +1145,7 @@ function renderChoice(card,r,kindLabel){
   });
   if(r.mode==='pic'){
     $('miniSpeak').onclick=e=>{e.stopPropagation();speak(w[0],$('miniSpeak'));};
+    setTimeout(()=>{if(session&&session.rounds[session.idx]===r)speak(w[0],$('miniSpeak'));},420);
   }else{
     $('bigSpeak').onclick=()=>speak(w[0],$('bigSpeak'));
     setTimeout(()=>{if(session&&session.rounds[session.idx]===r)speak(w[0],$('bigSpeak'));},420);
